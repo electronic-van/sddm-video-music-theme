@@ -1,5 +1,28 @@
 
 
+This is a fork of sddm-video-music-theme modified to look like the Windows 10 lockscreen. Things are currently very broken and I wouldn't recommend using this for anything more than testing.
+
+## But why?
+TL;DR: Why not.
+
+I've always been intrigued by Windows themes for Linux, but find that some of them feel a bit off. I wanted to see how well I could recreate the login screen, with the eventual goal of an accurate recreation. This won't happen any time soon, but I thought it would be fun to try.
+
+## Current features:
+- Animations/fade in
+- Update text (needs a config option)
+- Somewhat complete login screen
+
+## Current limitations:
+- Single video player: small flicker when video changes
+- No user switching support
+- Fake network icon: no support in SDDM
+- Buggy state transitions
+- Unchanged power/session menu
+- Hardcoded accent color
+
+
+## Original README below:
+
 # sddm-video-music theme
 This is a SDDM theme based on [@Eayu's](https://github.com/Eayu/sddm-theme-clairvoyance) Clairvoyance theme but also includes code from [@3ximus](https://github.com/3ximus/aerial-sddm-theme) Aerial-sddm-theme. The Clairvoyance theme was modified to have videos play as background and also play music. Music and videos are loaded from a playlist. To avoid reinventing the "wheel" I have used most of the code from the Clairvoyance and aerial-sddm-theme.
 
