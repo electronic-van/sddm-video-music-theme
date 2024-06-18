@@ -17,7 +17,7 @@ ListView {
   focus: true
   clip: true
 
-  Keys.onReturnPressed: {
+  Keys.onPressed: {
     page.state = "login";
     loginFrame.name = currentItem.name
     loginFrame.realName = currentItem.realName

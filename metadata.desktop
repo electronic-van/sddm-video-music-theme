@@ -1,6 +1,6 @@
 [SddmGreeterTheme]
-Name=sddm-video-music-theme
-Description=Play video as background. Play music in the background.
+Name=sddm-video-win10
+Description=Windows 10-styled theme with video background support
 License=GNU GPLv3 
 Type=sddm-theme
 Version=1.0

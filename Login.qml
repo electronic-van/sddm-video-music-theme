@@ -1,5 +1,6 @@
-import QtQuick 2.0
-import QtQuick.Controls 1.4
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 Item {
   id: loginFrame
@@ -20,15 +21,19 @@ Item {
 
   //Functions:
 
-  //Logins in with current details
+  //Login with current details
   function login() {
-    loginFrame.opacity = 0;
-    sddm.login(loginFrame.name, passwordInput.text, sessionSelect.currentIndex);
+    video1.state = "welcome"
+    passwordBox.visible = false;
+    welcome.visible = true;
+    powerFrame.visible = false;
+    loginTimer.start();
   }
 
   //Goes back to user select
   function back() {
-    page.state = "";
+    passwordInput.text = ""
+    page.state = "lockscreen";
     listView.focus = true;
   }
 
@@ -39,22 +44,34 @@ Item {
   KeyNavigation.tab: passwordInput
   Keys.onEscapePressed: back()
 
+  // Waits for animation to complete
+  Timer {
+    id: loginTimer
+    interval: 4000
+    running: false
+    repeat: false
+    onTriggered: sddm.login(loginFrame.name, passwordInput.text, sessionSelect.currentIndex)
+  }
+
   Connections {
     target: sddm
     onLoginSucceeded: {
     }
 
     onLoginFailed: {
-      loginFrame.opacity = 1;
+      video1.state = "login"
       passwordInput.text = ""
-      passwordStatus.opacity = 1;
-      passwordTimer.start();
+      welcome.visible = false
+      passwordStatus.visible = true
+      passwordBox.visible = false
+      incorrectPasswordButton.focus = true
     }
   }
 
   states: State {
       name: "active"
-      when: passwordInput.activeFocus == true || passwordInput.text != ""
+      // when: passwordInput.activeFocus == true || passwordInput.text != ""
+      when: passwordInput.text != ""
 
       PropertyChanges {
         target: defaultPasswordText
@@ -66,28 +83,10 @@ Item {
         opacity: 1
       }
 
-      PropertyChanges {
-        target: passwordUnderline
-        height: 50
-      }
-  }
-
-  transitions: Transition {
-    from: ""
-    to: "active"
-    reversible: true
-
-    PropertyAnimation {
-      properties: "opacity"
-      easing.type: Easing.InOutQuad
-      duration: 750
-    }
-
-    PropertyAnimation {
-      properties: "height"
-      easing.type: Easing.InOutQuad
-      duration: 750
-    }
+      // PropertyChanges {
+      //   target: passwordUnderline
+      //   height: 32
+      // }
   }
 
   //Back Button
@@ -112,7 +111,7 @@ Item {
     }
   }
 
-
+  // Profile picture
   Item {
     id: userProfile
 
@@ -122,7 +121,9 @@ Item {
     y:0
     anchors {
       horizontalCenter: parent.horizontalCenter
-      verticalCenter: parent.verticalCenter
+      top: parent.verticalCenter
+      // verticalCenter: parent.verticalCenter
+      topMargin: -228
     }
 
     //User's Name
@@ -131,92 +132,149 @@ Item {
 
       color: "white"
       font {
-       //family: "FiraMono"
-        pointSize: 25
+       family: "Segoe UI Light"
+        pointSize: 36
       }
       text: loginFrame.realName
       anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: usersPic.bottom
+      anchors.topMargin: 10
     }
 
     //User's Profile Pic
     Image {
       id: usersPic
+      width: 192
+      height: 192
 
-      width: 128
-      height: 128
       anchors {
-        top: usersName.bottom
-        topMargin: 50
+        // bottom: usersName.top
+        // topMargin: 50
         horizontalCenter: parent.horizontalCenter
       }
       source: loginFrame.icon
-    }
 
+      property bool rounded: true
+      property bool adapt: true
+
+      layer.enabled: rounded
+      layer.effect: OpacityMask {
+        maskSource: Item {
+          width: usersPic.width
+          height: usersPic.height
+          Rectangle {
+            anchors.centerIn: parent
+            width: usersPic.adapt ? usersPic.width : Math.min(usersPic.width, usersPic.height)
+            height: usersPic.adapt ? usersPic.height : width
+            radius: Math.min(width, height)
+          }
+        }
+      }
+    }
   }
 
-  Text {
-    id: passwordStatus
+  // Welcome
+  Row {
+    id: welcome
+    visible: false
+    opacity: 1
+    spacing: 8
 
-    text: "Incorrect Password!"
-    color: "white"
-    font {
-      pointSize: 10
-      family: "FiraMono"
+    AnimatedSprite {
+      id: loadingSprite
+      source: "Assets/loading_spritesheet.png"
+      frameWidth: 32
+      opacity: 1
+      frameHeight: 32
+      frameCount: 85
+      frameDuration: 50
     }
+    Text {
+      id: welcomeText
 
+      text: "Welcome"
+      color: "white"
+      font {
+        pointSize: 18
+        family: "Segoe UI"
+      }
+    }
     anchors {
-      horizontalCenter: parent.horizontalCenter
-      bottom: passwordBox.top
-      bottomMargin: 20
+      horizontalCenter: passwordBox.horizontalCenter
+      top: passwordBox.top
+      topMargin: -10
     }
-
-    opacity: 0
-
-    Timer {
-      id: passwordTimer
-      interval: 3000
-      running: false
-      repeat: false
-      onTriggered: {
-        passwordStatus.opacity= 0
-      }
-    }
-
-    Behavior on opacity {
-      NumberAnimation{
-        duration: 500
-        easing.type: Easing.InOutQuad
-      }
-    }
-
   }
 
+  // Password box
   Item {
     id: passwordBox
+    visible: true
 
-    width: 300
-    height: 50
+    width: 292
+    height: 32
     anchors {
       horizontalCenter: parent.horizontalCenter
       top: userProfile.bottom
-      topMargin: -75
+      topMargin: -55
+    }
+
+    Rectangle {
+      id: passwordUnderline
+      width: passwordBox.width - 31
+      height: 32
+      anchors {
+        bottom: passwordBox.bottom
+        left: passwordBox.left
+      }
+      color: "white"
+      opacity: 1.0
+      radius: 0
+    }
+
+    Rectangle {
+      id: passwordOutline
+      parent: passwordUnderline
+
+      width: 296
+      height: 36
+      color: "transparent"
+      opacity: mouse.hovered ? 0.9 : 0.4
+      radius: 0
+
+      HoverHandler {
+        id: mouse
+        acceptedDevices: PointerDevice.Mouse
+        cursorShape: Qt.IBeamCursor
+      }
+
+      anchors {
+        bottom: parent.bottom
+        left: parent.left
+        bottomMargin: -border.width
+        leftMargin: -border.width
+      }
+
+      border.color: "white"
+      border.width: 2
     }
 
     Text {
       id: defaultPasswordText
+      parent: passwordOutline
 
       anchors {
         fill: parent
-        topMargin: 15
-        leftMargin: 15
+        topMargin: 8
+        leftMargin: 10
       }
-      text: "Password..."
-      color: "white"
+      text: "Password"
+      color: "black"
       font {
-        pointSize: 14
-        family: "FiraMono"
+        pointSize: 10.5
+        family: "Segoe UI"
       }
-      opacity: 0.3
+      opacity: 0.5
     }
 
     TextInput {
@@ -225,56 +283,167 @@ Item {
       verticalAlignment: TextInput.AlignVCenter
       anchors {
         fill: parent
-        leftMargin: 15
+        leftMargin: 8
         rightMargin: 50
       }
       font {
-        pointSize: 14
-        family: "FiraMono"
-        letterSpacing: 2
+        pointSize: 10.5
+        family: "Segoe UI"
+        // letterSpacing: 2
       }
-      color: "white"
+      color: "black"
       echoMode:TextInput.Password
       clip: true
 
       onAccepted: {
         loginFrame.login()
       }
+    }
 
+    // Login button
+    RoundButton {
+      id: submitPasswordRect
+
+      width: 31
+      height: 32
+      // color: "white"
+      radius: 0
+      opacity: down ? 0.5 : 0.2
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+
+      onClicked: {
+        loginFrame.login()
+      }
     }
 
     Image {
       id: submitPassword
 
-      x: 260
-      y: 10
-      width: 30
-      height: 30
-      opacity: 0
-      source: "Assets/RightArrow.png"
-
-      MouseArea {
-        anchors.fill: parent
-        onClicked: {
-          loginFrame.login()
-        }
+      // x: 280
+      // y: 0
+      width: 16
+      height: 16
+      opacity: 1
+      source: "Assets/RightArrow_Win10.png"
+      anchors {
+        right: parent.right
+        bottom: parent.bottom
+        rightMargin: 8
+        bottomMargin: 8
       }
     }
 
-  }
-
-  Rectangle {
-    id: passwordUnderline
-
-    width: passwordBox.width
-    height: 1
-    anchors {
-      bottom: passwordBox.bottom
-      left: passwordBox.left
+    Behavior on opacity {
+      NumberAnimation {
+        duration: 500
+        easing.type: Easing.InOutQuad
+      }
     }
-    color: "white"
-    opacity: 0.3
-    radius: 4
   }
 
+  // Incorrect password text and button
+  Text {
+    id: passwordStatus
+    opacity: 1
+    visible: false
+
+    text: "The password is incorrect. Try again."
+    color: "white"
+    font {
+      pointSize: 10.5
+      family: "Segoe UI"
+    }
+
+    anchors {
+      horizontalCenter: passwordBox.horizontalCenter
+      bottom: passwordBox.verticalCenter
+      bottomMargin: 0
+    }
+
+    // OK button
+    RoundButton {
+      id: incorrectPasswordButton
+
+      width: 120
+      height: 33
+      // color: "white"
+      radius: 0
+      opacity: down ? 0.5 : 0.2
+      anchors.top: passwordStatus.bottom
+      anchors.topMargin: 50
+      anchors.horizontalCenter: parent.horizontalCenter
+
+      onClicked: {
+        passwordStatus.visible = false
+        passwordBox.visible = true
+        powerFrame.visible = true
+        passwordInput.focus = true
+      }
+    }
+
+    Rectangle {
+      id: incorrectPasswordButtonOutlineInner
+
+      width: 120
+      height: 33
+      color: "transparent"
+      opacity: incorrectPasswordButton.down ? 0.0 : mouse2.hovered ? 0.5 : 0.0
+      radius: 0
+
+      HoverHandler {
+        id: mouse2
+        acceptedDevices: PointerDevice.Mouse
+      }
+
+      anchors {
+        bottom: incorrectPasswordButton.bottom
+        left: incorrectPasswordButton.left
+        // bottomMargin: -border.width
+        // leftMargin: -border.width
+      }
+
+      border.color: "white"
+      border.width: 2
+    }
+
+    Rectangle {
+      id: incorrectPasswordButtonOutlineOuter
+
+      width: 126
+      height: 39
+      color: "transparent"
+      opacity: incorrectPasswordButton.down ? 0.0 : incorrectPasswordButton.activeFocus ? 1.0 : 0.0
+      radius: 0
+
+      anchors {
+        bottom: incorrectPasswordButton.bottom
+        left: incorrectPasswordButton.left
+        bottomMargin: -border.width - 1
+        leftMargin: -border.width - 1
+      }
+
+      border.color: "white"
+      border.width: 2
+    }
+
+    Text {
+      id: incorrectPasswordButtonText
+      opacity: 1
+
+      text: "OK"
+      color: "white"
+
+      anchors {
+        horizontalCenter: incorrectPasswordButton.horizontalCenter
+        bottom: incorrectPasswordButton.bottom
+        bottomMargin: 7
+      }
+
+      font {
+        pointSize: 10.5
+        family: "Segoe UI"
+      }
+    }
+  }
 }
